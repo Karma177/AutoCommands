@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>trollnetwork.karma177</groupId>
-    <artifactId>trollcommands</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>autocommands</artifactId>
+    <version>1.0-STABLE</version>
     <packaging>jar</packaging>
 
-    <name>TrollCommands</name>
-    <description>A Velocity plugin</description>
+    <name>AutoCommands</name>
+    <description>Un plugin che esegue automaticamente dei comandi.</description>
 
     <properties>
         <java.version>21</java.version>

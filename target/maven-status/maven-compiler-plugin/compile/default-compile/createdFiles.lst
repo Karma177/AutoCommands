@@ -1,2 +1,10 @@
-trollnetwork\karma177\TrollCommands.class
+trollnetwork\karma177\Exceptions\EmptyCommandException.class
+trollnetwork\karma177\Exceptions\InvalidCommandMethodException.class
+trollnetwork\karma177\EventMethod.class
+trollnetwork\karma177\AutoCommandListener.class
+trollnetwork\karma177\Exceptions\MissingUserConfigException.class
+trollnetwork\karma177\AutoCommands.class
+trollnetwork\karma177\GestoreComandi$1.class
+trollnetwork\karma177\Exceptions\MissingPluginConfigException.class
 velocity-plugin.json
+trollnetwork\karma177\GestoreComandi.class

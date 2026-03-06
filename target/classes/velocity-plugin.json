@@ -1,1 +1,1 @@
-{"id":"trollcommands","name":"TrollCommands","version":"1.0-SNAPSHOT","description":"A Velocity plugin","authors":["Karma177"],"dependencies":[],"main":"trollnetwork.karma177.TrollCommands"}
+{"id":"autocommands","name":"AutoCommands","version":"1.0-STABLE","description":"Un plugin che esegue automaticamente dei comandi.","authors":["Karma177"],"dependencies":[],"main":"trollnetwork.karma177.AutoCommands"}
