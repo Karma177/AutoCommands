@@ -1,1 +1,1 @@
-{"id":"autocommands","name":"AutoCommands","version":"1.0-STABLE","description":"Un plugin che esegue automaticamente dei comandi.","authors":["Karma177"],"dependencies":[],"main":"trollnetwork.karma177.AutoCommands"}
+{"id":"autocommands","name":"AutoCommands","version":"1.1-STABLE","description":"Un plugin che esegue automaticamente dei comandi.","authors":["Karma177"],"dependencies":[],"main":"trollnetwork.karma177.autocommands.AutoCommands"}

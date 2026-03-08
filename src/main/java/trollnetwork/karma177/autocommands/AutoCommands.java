@@ -1,11 +1,13 @@
-package trollnetwork.karma177;
+package trollnetwork.karma177.autocommands;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyReloadEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -14,10 +16,10 @@ import com.velocitypowered.api.proxy.ProxyServer;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import trollnetwork.karma177.Exceptions.EmptyCommandException;
-import trollnetwork.karma177.Exceptions.InvalidCommandMethodException;
-import trollnetwork.karma177.Exceptions.MissingPluginConfigException;
-import trollnetwork.karma177.Exceptions.MissingUserConfigException;
+import trollnetwork.karma177.autocommands.Exceptions.EmptyCommandException;
+import trollnetwork.karma177.autocommands.Exceptions.InvalidCommandMethodException;
+import trollnetwork.karma177.autocommands.Exceptions.MissingPluginConfigException;
+import trollnetwork.karma177.autocommands.Exceptions.MissingUserConfigException;
 
 import org.slf4j.Logger;
 
@@ -28,7 +30,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "autocommands",
         name = "AutoCommands",
-        version = "1.0-STABLE",
+        version = "1.1-STABLE",
         description = "Un plugin che esegue automaticamente dei comandi.",
         authors = {"Karma177"}
 )
@@ -39,7 +41,6 @@ public class AutoCommands {
     private final GestoreComandi gestoreComandi;
     private final Path dataDirectory;
     private final String configFileName = "commands.json";
-    
 
     /**
      * AutoCommands
@@ -79,6 +80,13 @@ public class AutoCommands {
         this.onDisable();
     }
 
+    @Subscribe
+    public void onProxyReload(ProxyReloadEvent event) {
+        this.logger.info("Ricaricamento di AutoCommands in corso...");
+        preloadCommandManager();
+        this.logger.info("AutoCommands ricaricato con successo!");
+    }
+
     /**
      * onPostLogin
      * Metodo chiamato quando un giocatore si connette al proxy
@@ -88,21 +96,40 @@ public class AutoCommands {
     public void onPostLogin(PostLoginEvent event) {
         Player player = event.getPlayer();
         String UUID = player.getUniqueId().toString();
+        pullAndExecute(UUID, "join");
+    }
 
-        // Prendiamo la lista dei comandi da eseguire in Login
-        String[] comandiDaEseguire;
-        try {
-            comandiDaEseguire = gestoreComandi.getCommandList(UUID, "join");
-        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
-                | InvalidCommandMethodException e) {
-            this.logger.info(e.getMessage());
-            return;
-        }
+    /**
+     * onDisconnect
+     * Metodo chiamato quando un giocatore si disconnette dal proxy
+     * @param event
+     */
+    @Subscribe
+    public void onDisconnect(DisconnectEvent event) {
+        Player player = event.getPlayer();
+        String UUID = player.getUniqueId().toString();
+        pullAndExecute(UUID, "logout");
+    }
 
-        // Instanziamo il CommandManager e il CommandSource per eseguire i comandi come console
-        CommandManager commandManager = proxy.getCommandManager();
-        CommandSource console = proxy.getConsoleCommandSource();
-        commandExecuter(console, commandManager, comandiDaEseguire);
+    /**
+     * onEnable
+     * Metodo chiamato all'avvio del plugin, in cui viene caricata la configurazione
+     */
+    private void onEnable() {
+        this.logger.info("Caricamento configurazione...");
+        // load logic
+        preloadCommandManager();
+        registerCommands();
+        this.logger.info("Configurazione completata!");
+    }
+
+    /**
+     * onDisable
+     * Metodo chiamato alla chiusura del plugin, in cui viene eseguita la logica di unload
+     */
+    private void onDisable() {
+        // unload logic
+        this.logger.info("Arresto completato!");
     }
 
     /**
@@ -137,6 +164,25 @@ public class AutoCommands {
         }
         source.sendMessage(Component.text("AutoCommands (" + comandiDaEseguire.length + ") eseguiti per l'utente: ", NamedTextColor.GREEN));
         source.sendMessage(Component.text("[" + UUID + "]", NamedTextColor.GREEN));
+
+        CommandManager commandManager = proxy.getCommandManager();
+        CommandSource console = proxy.getConsoleCommandSource();
+        commandExecuter(console, commandManager, comandiDaEseguire);
+    }
+    
+    public GestoreComandi getGestoreComandi() {
+        return this.gestoreComandi;
+    }
+
+    private void pullAndExecute(String UUID, String method) {
+        String[] comandiDaEseguire;
+        try {
+            comandiDaEseguire = gestoreComandi.getCommandList(UUID, method);
+        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
+                | InvalidCommandMethodException e) {
+            this.logger.info(e.getMessage());
+            return;
+        }
 
         CommandManager commandManager = proxy.getCommandManager();
         CommandSource console = proxy.getConsoleCommandSource();
@@ -184,6 +230,9 @@ public class AutoCommands {
                         "    ],\n" +
                         "    \"onCommand\": [\n" +
                         "      \"send user server\"\n" +
+                        "    ],\n" +
+                        "    \"onLogout\": [\n" +
+                        "      \"send user server\"\n" +
                         "    ]\n" +
                         "  }\n" +
                         "}";
@@ -194,38 +243,26 @@ public class AutoCommands {
         }
     }
 
-    /**
-     * onEnable
-     * Metodo chiamato all'avvio del plugin, in cui viene caricata la configurazione
-     */
-    private void onEnable() {
-        this.logger.info("Caricamento configurazione...");
-        // load logic
+    private void preloadCommandManager(){
         Path configFile = this.dataDirectory.resolve(this.configFileName);
         if (!Files.exists(configFile)) {
             this.logger.info("Nessun file trovato!");
             createEmptyConfigFile();
         }
-        
+
+        try {
+            this.gestoreComandi.reload();
+        } catch (MissingPluginConfigException e) {
+            this.logger.error(e.getMessage());
+        }
+    }
+
+    private void registerCommands(){
         // Registrazione del comando /AutoCommands in game
         CommandManager commandManager = proxy.getCommandManager();
         commandManager.register(
             commandManager.metaBuilder("autocommands").build(),
             new AutoCommandListener(this)
         );
-        this.logger.info("Configurazione completata!");
-    }
-
-    /**
-     * onDisable
-     * Metodo chiamato alla chiusura del plugin, in cui viene eseguita la logica di unload
-     */
-    private void onDisable() {
-        // unload logic
-        this.logger.info("Arresto completato!");
-    }
-
-    public GestoreComandi getGestoreComandi() {
-        return this.gestoreComandi;
     }
 }

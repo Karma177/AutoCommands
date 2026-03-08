@@ -1,4 +1,4 @@
-package trollnetwork.karma177;
+package trollnetwork.karma177.autocommands;
 
 /**
  * EventMethod
@@ -6,7 +6,8 @@ package trollnetwork.karma177;
  */
 public enum EventMethod {
         join("onJoin"),
-        command("onCommand");
+        command("onCommand"),
+        logout("onLogout");
 
         private final String jsonKey;
 

@@ -1,4 +1,4 @@
-package trollnetwork.karma177;
+package trollnetwork.karma177.autocommands;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;

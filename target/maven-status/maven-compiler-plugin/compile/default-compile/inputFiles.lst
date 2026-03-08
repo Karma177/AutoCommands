@@ -1,8 +1,8 @@
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\GestoreComandi.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\AutoCommands.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\Exceptions\InvalidCommandMethodException.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\AutoCommandListener.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\Exceptions\MissingUserConfigException.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\Exceptions\EmptyCommandException.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\EventMethod.java
-D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\Exceptions\MissingPluginConfigException.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\Exceptions\InvalidCommandMethodException.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\AutoCommandListener.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\EventMethod.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\AutoCommands.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\Exceptions\EmptyCommandException.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\Exceptions\MissingUserConfigException.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\Exceptions\MissingPluginConfigException.java
+D:\Github\TrollCommands\src\main\java\trollnetwork\karma177\autocommands\GestoreComandi.java

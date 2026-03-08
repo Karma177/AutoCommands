@@ -1,4 +1,4 @@
-package trollnetwork.karma177.Exceptions;
+package trollnetwork.karma177.autocommands.Exceptions;
 
 public class EmptyCommandException extends Exception {
     public EmptyCommandException(String message) {
