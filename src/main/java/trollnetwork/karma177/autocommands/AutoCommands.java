@@ -14,8 +14,6 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import trollnetwork.karma177.autocommands.Exceptions.EmptyCommandException;
 import trollnetwork.karma177.autocommands.Exceptions.InvalidCommandMethodException;
 import trollnetwork.karma177.autocommands.Exceptions.MissingPluginConfigException;
@@ -27,11 +25,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import trollnetwork.karma177.autocommands.utils.Messages;
+
 @Plugin(
         id = "autocommands",
         name = "AutoCommands",
         version = "1.1-STABLE",
-        description = "Un plugin che esegue automaticamente dei comandi.",
+        description = "Autoesecuzione di comandi predeterminati.",
         authors = {"Karma177"}
 )
 public class AutoCommands {
@@ -40,7 +40,7 @@ public class AutoCommands {
     private final Logger logger;
     private final GestoreComandi gestoreComandi;
     private final Path dataDirectory;
-    private final String configFileName = "commands.json";
+    private static final String CONFIG_FILE_NAME = "commands.json";
 
     /**
      * AutoCommands
@@ -54,7 +54,7 @@ public class AutoCommands {
         this.proxy = proxy;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
-        this.gestoreComandi = new GestoreComandi(this.dataDirectory.toString(), configFileName);
+        this.gestoreComandi = new GestoreComandi(this.dataDirectory.toString(), CONFIG_FILE_NAME);
     }
 
     /**
@@ -64,7 +64,7 @@ public class AutoCommands {
      */
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        this.logger.info("AutoCommands in avvio!");
+        this.logger.info("AutoCommands in avvio...");
         this.onEnable();
     }
 
@@ -75,7 +75,7 @@ public class AutoCommands {
      */
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
-        this.logger.info("AutoCommands in arresto!");
+        this.logger.info("AutoCommands in arresto...");
         this.logger.info("AutoCommands... Comandi automatici, o comandi su ruote?");
         this.onDisable();
     }
@@ -84,6 +84,7 @@ public class AutoCommands {
     public void onProxyReload(ProxyReloadEvent event) {
         this.logger.info("Ricaricamento di AutoCommands in corso...");
         preloadCommandManager();
+        Messages.init(this.dataDirectory.resolve("messages.yml").toString(), this.logger);
         this.logger.info("AutoCommands ricaricato con successo!");
     }
 
@@ -95,8 +96,8 @@ public class AutoCommands {
     @Subscribe
     public void onPostLogin(PostLoginEvent event) {
         Player player = event.getPlayer();
-        String UUID = player.getUniqueId().toString();
-        pullAndExecute(UUID, "join");
+        String uuid = player.getUniqueId().toString();
+        pullAndExecute(uuid, "join");
     }
 
     /**
@@ -107,8 +108,8 @@ public class AutoCommands {
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         Player player = event.getPlayer();
-        String UUID = player.getUniqueId().toString();
-        pullAndExecute(UUID, "logout");
+        String uuid = player.getUniqueId().toString();
+        pullAndExecute(uuid, "logout");
     }
 
     /**
@@ -117,6 +118,7 @@ public class AutoCommands {
      */
     private void onEnable() {
         this.logger.info("Caricamento configurazione...");
+        Messages.init(this.dataDirectory.resolve("messages.yml").toString(), this.logger);
         // load logic
         preloadCommandManager();
         registerCommands();
@@ -139,31 +141,26 @@ public class AutoCommands {
      * @param source
      */
     public void onCommandCall(String[] args, CommandSource source) {
-        String UUID = args[0];
+        String uuid = args[0];
         // "command" è la Phase che l'enum mappa come "onCommand"
         String[] comandiDaEseguire;
         try {
-            comandiDaEseguire = gestoreComandi.getCommandList(UUID, "command");
+            comandiDaEseguire = gestoreComandi.getCommandList(uuid, "command");
         } catch (InvalidCommandMethodException e) {
-            source.sendMessage(Component.text("AutoCommands non è riuscito ad eseguire tutti i comandi per: ", NamedTextColor.RED));
-            source.sendMessage(Component.text("[" + UUID + "]", NamedTextColor.RED));
-            source.sendMessage(Component.text("Controlla la console per maggiori info.", NamedTextColor.RED));
+            source.sendMessage(Messages.toComponent(Messages.get("cmd_exec_failed").replace("{uuid}", uuid)));
+            source.sendMessage(Messages.toComponent(Messages.get("check_console")));
             this.logger.info(e.getMessage());
             return;
-        } catch(MissingUserConfigException e) {
-            source.sendMessage(Component.text("Nessun comando da eseguire per: ", NamedTextColor.YELLOW));
-            source.sendMessage(Component.text("[" + UUID + "]", NamedTextColor.YELLOW));
+        } catch (MissingUserConfigException | EmptyCommandException e) {
+            source.sendMessage(Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", uuid)));
             return;
-        } catch(EmptyCommandException e){
-            source.sendMessage(Component.text("Nessun comando da eseguire per: ", NamedTextColor.YELLOW));
-            source.sendMessage(Component.text("[" + UUID + "]", NamedTextColor.YELLOW));
-            return;
-        } catch(MissingPluginConfigException e){
-            source.sendMessage(Component.text("Nessun file di config per il plugin trovato!", NamedTextColor.DARK_RED));
+        } catch (MissingPluginConfigException e) {
+            source.sendMessage(Messages.toComponent(Messages.get("no_plugin_config")));
             return;
         }
-        source.sendMessage(Component.text("AutoCommands (" + comandiDaEseguire.length + ") eseguiti per l'utente: ", NamedTextColor.GREEN));
-        source.sendMessage(Component.text("[" + UUID + "]", NamedTextColor.GREEN));
+        source.sendMessage(Messages.toComponent(Messages.get("cmd_exec_success")
+                .replace("{uuid}", uuid)
+                .replace("{count}", String.valueOf(comandiDaEseguire.length))));
 
         CommandManager commandManager = proxy.getCommandManager();
         CommandSource console = proxy.getConsoleCommandSource();
@@ -174,12 +171,11 @@ public class AutoCommands {
         return this.gestoreComandi;
     }
 
-    private void pullAndExecute(String UUID, String method) {
+    private void pullAndExecute(String uuid, String method) {
         String[] comandiDaEseguire;
         try {
-            comandiDaEseguire = gestoreComandi.getCommandList(UUID, method);
-        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
-                | InvalidCommandMethodException e) {
+            comandiDaEseguire = gestoreComandi.getCommandList(uuid, method);
+        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException | InvalidCommandMethodException e) {
             this.logger.info(e.getMessage());
             return;
         }
@@ -196,18 +192,15 @@ public class AutoCommands {
      * @param commandManager
      * @param comandiDaEseguire
      */
-    private void commandExecuter(CommandSource console, CommandManager commandManager,String[] comandiDaEseguire) {
+    private void commandExecuter(CommandSource console, CommandManager commandManager, String[] comandiDaEseguire) {
         this.logger.info("CommandExecuter running...");
-        for (String comando : comandiDaEseguire) {         
-            // Eseguiamo il comando in modo asincrono
+        for (String comando : comandiDaEseguire)
             commandManager.executeAsync(console, comando).thenAccept(successo -> {
-                if (!successo) {
+                if (!successo)
                     logger.warn("Impossibile eseguire il comando: " + comando);
-                }else {
+                else
                     logger.info("Comando eseguito: " + comando);
-                }
             });
-        }
     }
 
     /**
@@ -217,39 +210,29 @@ public class AutoCommands {
     private void createEmptyConfigFile() {
         this.logger.info("Creazione file di configurazione...");
         try {
-            if (!Files.exists(this.dataDirectory)) {
+            if (!Files.exists(this.dataDirectory))
                 Files.createDirectories(this.dataDirectory);
-            }
             
-            Path configFile = this.dataDirectory.resolve(this.configFileName);
-            if (!Files.exists(configFile)) {
-                String defaultJson = "{\n" +
-                        "  \"UUID\": {\n" +
-                        "    \"onJoin\": [\n" +
-                        "      \"send user server\"\n" +
-                        "    ],\n" +
-                        "    \"onCommand\": [\n" +
-                        "      \"send user server\"\n" +
-                        "    ],\n" +
-                        "    \"onLogout\": [\n" +
-                        "      \"send user server\"\n" +
-                        "    ]\n" +
-                        "  }\n" +
-                        "}";
-                Files.writeString(configFile, defaultJson);
-            }
+            Path configFile = this.dataDirectory.resolve(CONFIG_FILE_NAME);
+            if (!Files.exists(configFile))
+                try (java.io.InputStream in = AutoCommands.class.getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
+                    if (in == null){
+                        this.logger.error("Impossibile trovare " + CONFIG_FILE_NAME + " nelle risorse interne.");
+                        return;
+                    }
+                    Files.copy(in, configFile);
+                }
         } catch (IOException e) {
-            this.logger.error("Impossibile creare il file di configurazione o le directory.", e);
+            this.logger.error("Impossibile creare il file di configurazione. Maggiori informazioni a seguire:");
+            this.logger.error(e.getMessage());
         }
     }
 
-    private void preloadCommandManager(){
-        Path configFile = this.dataDirectory.resolve(this.configFileName);
-        if (!Files.exists(configFile)) {
-            this.logger.info("Nessun file trovato!");
+    private void preloadCommandManager() {
+        Path configFile = this.dataDirectory.resolve(CONFIG_FILE_NAME);
+        if (!Files.exists(configFile))
             createEmptyConfigFile();
-        }
-
+        
         try {
             this.gestoreComandi.reload();
         } catch (MissingPluginConfigException e) {
@@ -261,7 +244,9 @@ public class AutoCommands {
         // Registrazione del comando /AutoCommands in game
         CommandManager commandManager = proxy.getCommandManager();
         commandManager.register(
-            commandManager.metaBuilder("autocommands").build(),
+            commandManager.metaBuilder("autocommands")
+            .aliases("autocmd")
+            .build(),
             new AutoCommandListener(this)
         );
     }

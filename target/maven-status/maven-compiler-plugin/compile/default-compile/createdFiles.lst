@@ -1,10 +1,12 @@
+velocity-plugin.json
+trollnetwork\karma177\autocommands\Exceptions\MissingUserConfigException.class
+trollnetwork\karma177\autocommands\AutoCommandListener.class
 trollnetwork\karma177\autocommands\AutoCommands.class
 trollnetwork\karma177\autocommands\GestoreComandi$1.class
+trollnetwork\karma177\autocommands\utils\Messages.class
 trollnetwork\karma177\autocommands\Exceptions\EmptyCommandException.class
 trollnetwork\karma177\autocommands\Exceptions\MissingPluginConfigException.class
-velocity-plugin.json
 trollnetwork\karma177\autocommands\Exceptions\InvalidCommandMethodException.class
 trollnetwork\karma177\autocommands\EventMethod.class
-trollnetwork\karma177\autocommands\Exceptions\MissingUserConfigException.class
 trollnetwork\karma177\autocommands\GestoreComandi.class
-trollnetwork\karma177\autocommands\AutoCommandListener.class
+trollnetwork\karma177\autocommands\utils\PermissionChecker.class

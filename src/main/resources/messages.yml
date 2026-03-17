@@ -1,0 +1,8 @@
+no_command_for_user: "&eNessun comando da eseguire per: {uuid}"
+cmd_exec_failed: "&cAutoCommands non è riuscito ad eseguire tutti i comandi per: {uuid}"
+cmd_exec_success: "&aAutoCommands eseguiti per l'utente ({count}): {uuid}"
+no_plugin_config: "&4Nessun file di config per il plugin trovato!"
+check_console: "&cControlla la console per maggiori info."
+usage_error: "&cUso corretto: /autocommands <uuid>"
+too_many_args: "&cTroppi argomenti! Uso corretto: /autocommands <uuid>"
+no_permission: "&cNon hai il permesso di eseguire questo comando."

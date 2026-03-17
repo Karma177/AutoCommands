@@ -42,13 +42,12 @@ public class GestoreComandi {
      * getAvailableUUIDs()
      * Legge la configurazione e restituisce una lista di tutti gli UUID presenti nel file JSON
      * @return Array di UUID disponibili
-     * @throws MissingPluginConfigException 
      */
     public String[] getAvailableUUIDs() {
         try {
             return getCommands().keySet().toArray(new String[0]);
         } catch (MissingPluginConfigException e) {
-            return new String[]{"No UUIDs found"};
+            return new String[0];
         }
     }
 
@@ -73,27 +72,30 @@ public class GestoreComandi {
         }
 
         Map<String, Map<String, List<String>>> commands = this.getCommands();
-        if (commands != null) {
-            Map<String, List<String>> userCommands = commands.get(UUID);
-            if (userCommands != null) {
-                List<String> eventCommands = userCommands.get(eventMethod.getJsonKey());
-                if (eventCommands != null) {
-                    return eventCommands.toArray(new String[0]);
-                }
-                throw new EmptyCommandException("Nessun comando " + eventMethod.getJsonKey() + " per l'utente " + UUID);
-            }
+        if (commands == null) {
+            throw new MissingPluginConfigException("File di configurazione del plugin vuoto!");
+        }
+
+        Map<String, List<String>> userCommands = commands.get(UUID);
+        if (userCommands == null) {
             throw new MissingUserConfigException("Nessuna configurazione trovata per l'utente " + UUID);
         }
-        throw new MissingPluginConfigException("File di configurazione del plugin vuoto!");
+
+        List<String> eventCommands = userCommands.get(eventMethod.getJsonKey());
+        if (eventCommands == null || eventCommands.isEmpty()) {
+            throw new EmptyCommandException("Nessun comando " + eventMethod.getJsonKey() + " per l'utente " + UUID);
+        }
+        
+        return eventCommands.toArray(new String[0]);
     }
 
     /**
      * reload()
      * Ricarica la configurazione dei comandi da file, aggiornando la cache
-     * @return
+     * @return true se ricaricato, false altrimenti
      * @throws MissingPluginConfigException
      */
-    public Boolean reload() throws MissingPluginConfigException{
+    public boolean reload() throws MissingPluginConfigException{
         try{
             this.commandsCache = parseJSON(new File(this.fileDirectory, this.configFileName));
         } catch (FileNotFoundException e) {
@@ -122,12 +124,12 @@ public class GestoreComandi {
     */
     private Map<String, Map<String, List<String>>> loadCommandsFromFile() throws MissingPluginConfigException {
         File file = new File(this.fileDirectory, this.configFileName);
+        
         try {
             if (file.exists() && file.isFile()) {
                 Map<String, Map<String, List<String>>> fileData = parseJSON(file);
-                if (fileData != null) {
+                if (fileData != null)
                     return fileData;
-                }
             }
         } catch (FileNotFoundException e) {
             throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.configFileName + " non trovato");
@@ -144,16 +146,15 @@ public class GestoreComandi {
      * @throws FileNotFoundException
      */
     private Map<String, Map<String, List<String>>> parseJSON(File file) throws FileNotFoundException {
-        FileReader reader = new FileReader(file);
         Type type = new TypeToken<Map<String, Map<String, List<String>>>>() {}.getType();
-        Map<String, Map<String, List<String>>> data = gson.fromJson(reader, type);
-        try {
-            reader.close();
+        try (FileReader reader = new FileReader(file)) {
+            return gson.fromJson(reader, type);
+        } catch (FileNotFoundException e) {
+            throw e; // Rilanciamola se deve esser gestita all'esterno
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            return null;
         }
-        return data;
     }
 
 }
