@@ -30,7 +30,7 @@ import trollnetwork.karma177.autocommands.utils.Messages;
 @Plugin(
         id = "autocommands",
         name = "AutoCommands",
-        version = "1.1-STABLE",
+        version = "1.2-STABLE",
         description = "Autoesecuzione di comandi predeterminati.",
         authors = {"Karma177"}
 )

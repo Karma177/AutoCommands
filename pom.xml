@@ -6,7 +6,7 @@
 
     <groupId>trollnetwork.karma177</groupId>
     <artifactId>autocommands</artifactId>
-    <version>1.1-STABLE</version>
+    <version>1.2-STABLE</version>
     <packaging>jar</packaging>
 
     <name>AutoCommands</name>
