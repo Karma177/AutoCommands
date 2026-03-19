@@ -1,0 +1,23 @@
+{
+  "group1": {
+    "uuids": [
+      "uuid1",
+      "uuid2"
+    ],
+    "join": [
+      "lp user {player} parent add autocommands"
+    ],
+    "run": [
+      "comando_personalizzato",
+      "altro_comando"
+    ],
+    "leave": [
+      "lp user {player} parent remove autocommands"
+    ]
+  },
+  "group2": {
+    "join": [".."],
+    "run": [".."],
+    "leave": [".."]
+  }
+}

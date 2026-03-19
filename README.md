@@ -32,7 +32,12 @@ Un breve registro con piani e lavori per le patch o integrazioni in cantiere in 
 - [x] Aggiunta del commando `/autocommands reload`.
 - [x] Aggiunta del commando `/autocommands help`.
 - [x] Aggiunta del commando `/autocommands version`.
-- [ ] Macro?
+- [/] Macro?
+    - Complete al 60%... Creati gruppi, da capire il funzionamento di /autocommands run:
+        - Se avere solo l'uuid, oppure
+        - Se avere [group/user], così da eseguire i comandi separati
+        - Se avere [group/user/all] così da eseguire i comandi di tutto quello legato a quell'user
+    - Manca anche sostituire {player} all'uuid nella stringa prima di venire eseguita
 - [x] Eliminare EventMethod, passare direttamente a chiavi "join", "command", "leave" (sono utilizzati solo nel codice, direi che sono ricordabili...)
 - [ ] Pulizia generale 
     - Togliere trollnetwork dal package per renderlo on-par con adminchat (verrà aggiunto come autore dopo il trasferimento), rinominare AutoCommandListener a AutoCMDListner. 

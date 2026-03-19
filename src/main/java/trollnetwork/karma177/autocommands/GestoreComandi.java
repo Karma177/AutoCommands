@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -19,16 +20,19 @@ import trollnetwork.karma177.autocommands.Exceptions.MissingUserConfigException;
 
 public class GestoreComandi {
     
-    private final String configFileName;
+    private final String userList;
+    private final String groupList;
     // gson = lib per convertire da JSON a oggetti Java e viceversa
     private final Gson gson;
     private String fileDirectory;
     private Map<String, Map<String, List<String>>> commandsCache;
+    private Map<String, Map<String, List<String>>> groupsCache;
     private List<String> methods = Arrays.asList("join","run","leave");
 
-    public GestoreComandi(String fileDirectory, String configFileName) {
+    public GestoreComandi(String fileDirectory, String userList, String groupList) {
         this.fileDirectory = fileDirectory;
-        this.configFileName = configFileName;
+        this.userList = userList;
+        this.groupList = groupList;
         this.gson = new Gson();
         this.commandsCache = null;
     }
@@ -36,6 +40,13 @@ public class GestoreComandi {
     public Map<String, Map<String, List<String>>> getCommands() throws MissingPluginConfigException {
         if (commandsCache == null) {
             commandsCache = loadCommandsFromFile();
+        }
+        return commandsCache;
+    }
+
+    public Map<String, Map<String, List<String>>> getGroups() throws MissingPluginConfigException {
+        if (commandsCache == null) {
+            commandsCache = loadGroupsFromFile();
         }
         return commandsCache;
     }
@@ -87,6 +98,31 @@ public class GestoreComandi {
         return eventCommands.toArray(new String[0]);
     }
 
+    public String[] getGroupCommandsFromUUID(String UUID, String method){
+        String[] userGroups = this.checkMemberships(UUID);
+        List<String> commands = new ArrayList<>();
+        for(String group : userGroups){
+            commands.addAll(Arrays.asList(getGroupCommands(group, method)));
+        }
+        return commands.toArray(new String[0]);
+    }
+
+    public String[] getGroupCommands(String group, String method){
+        return this.groupsCache.get(group).get(method).toArray(new String[0]);
+    }
+
+    public String[] checkMemberships(String UUID){
+        List<String> groups = new ArrayList<>();;
+
+        for(Map.Entry<String, Map<String, List<String>>> group : this.groupsCache.entrySet()){
+            if(group.getValue().containsKey(UUID))
+                groups.add(group.getKey());
+        };
+
+        return groups.toArray(new String[0]);
+    }
+
+
     /**
      * reload()
      * Ricarica la configurazione dei comandi da file, aggiornando la cache
@@ -95,12 +131,13 @@ public class GestoreComandi {
      */
     public boolean reload() throws MissingPluginConfigException{
         try{
-            this.commandsCache = parseJSON(new File(this.fileDirectory, this.configFileName));
+            this.commandsCache = parseJSON(new File(this.fileDirectory, this.userList));
+            this.groupsCache = parseJSON(new File(this.fileDirectory, this.groupList));
         } catch (FileNotFoundException e) {
-            throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.configFileName + " non trovato");
+            throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.userList + " non trovato");
         }
 
-        return this.commandsCache != null;
+        return this.commandsCache != null && this.groupsCache != null;
     }
 
     /**
@@ -121,7 +158,7 @@ public class GestoreComandi {
     * @throws MissingPluginConfigException (FileNotFoundException)
     */
     private Map<String, Map<String, List<String>>> loadCommandsFromFile() throws MissingPluginConfigException {
-        File file = new File(this.fileDirectory, this.configFileName);
+        File file = new File(this.fileDirectory, this.userList);
         
         try {
             if (file.exists() && file.isFile()) {
@@ -130,7 +167,29 @@ public class GestoreComandi {
                     return fileData;
             }
         } catch (FileNotFoundException e) {
-            throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.configFileName + " non trovato");
+            throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.userList + " non trovato");
+        }
+        
+        return null;
+    }
+
+
+    /**
+    * loadGroupsFromFile() 
+    * @return Map<String, Map<String, List<String>>> - Mappa che associa ogni guppo  a una mappa di comandi e uuids
+    * @throws MissingPluginConfigException (FileNotFoundException)
+    */
+    private Map<String, Map<String, List<String>>> loadGroupsFromFile() throws MissingPluginConfigException {
+        File file = new File(this.fileDirectory, this.groupList);
+        
+        try {
+            if (file.exists() && file.isFile()) {
+                Map<String, Map<String, List<String>>> fileData = parseJSON(file);
+                if (fileData != null)
+                    return fileData;
+            }
+        } catch (FileNotFoundException e) {
+            throw new MissingPluginConfigException(this.fileDirectory + "\\" + this.groupList + " non trovato");
         }
         
         return null;

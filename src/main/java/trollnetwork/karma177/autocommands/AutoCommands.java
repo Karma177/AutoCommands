@@ -24,6 +24,9 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import trollnetwork.karma177.autocommands.utils.Messages;
 
@@ -41,7 +44,8 @@ public class AutoCommands {
     private final GestoreComandi gestoreComandi;
     private final Path dataDirectory;
     private final String version = "1.2-STABLE";
-    private static final String CONFIG_FILE_NAME = "commands.json";
+    private static final String USER_LIST = "users.json";
+    private static final String GROUP_LIST = "groups.json";
 
     /**
      * AutoCommands
@@ -55,7 +59,7 @@ public class AutoCommands {
         this.proxy = proxy;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
-        this.gestoreComandi = new GestoreComandi(this.dataDirectory.toString(), CONFIG_FILE_NAME);
+        this.gestoreComandi = new GestoreComandi(this.dataDirectory.toString(), USER_LIST, GROUP_LIST);
     }
 
     /**
@@ -103,6 +107,7 @@ public class AutoCommands {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
         try{
+
             pullAndExecute(uuid, "join");
         } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
                 | InvalidCommandMethodException e) {
@@ -158,15 +163,18 @@ public class AutoCommands {
     }
 
     public int pullAndExecute(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
-        String[] comandiDaEseguire;
-        comandiDaEseguire = gestoreComandi.getCommandList(uuid, method);
+        List<String> comandiDaEseguire = new ArrayList<>();
+        comandiDaEseguire.addAll(Arrays.asList(gestoreComandi.getCommandList(uuid, method)));
+        comandiDaEseguire.addAll(Arrays.asList(gestoreComandi.getGroupCommandsFromUUID(uuid, method)));
 
         CommandManager commandManager = proxy.getCommandManager();
         CommandSource console = proxy.getConsoleCommandSource();
-        commandExecuter(console, commandManager, comandiDaEseguire);
+        commandExecuter(console, commandManager, comandiDaEseguire.toArray(new String[0]));
 
-        return comandiDaEseguire.length;
+        return comandiDaEseguire.size();
     }
+    
+
 
     /**
      * commandExecuter
@@ -190,17 +198,42 @@ public class AutoCommands {
      * createEmptyConfigFile
      * Metodo che crea un file di configurazione vuoto se non esiste
      */
-    private void createEmptyConfigFile() {
-        this.logger.info("Creazione file di configurazione...");
+    private void createEmptyUserList() {
+        this.logger.info("Creazione file di configurazione per gli utenti...");
         try {
             if (!Files.exists(this.dataDirectory))
                 Files.createDirectories(this.dataDirectory);
             
-            Path configFile = this.dataDirectory.resolve(CONFIG_FILE_NAME);
+            Path configFile = this.dataDirectory.resolve(USER_LIST);
             if (!Files.exists(configFile))
-                try (java.io.InputStream in = AutoCommands.class.getClassLoader().getResourceAsStream(CONFIG_FILE_NAME)) {
+                try (java.io.InputStream in = AutoCommands.class.getClassLoader().getResourceAsStream(USER_LIST)) {
                     if (in == null){
-                        this.logger.error("Impossibile trovare " + CONFIG_FILE_NAME + " nelle risorse interne.");
+                        this.logger.error("Impossibile trovare " + USER_LIST + " nelle risorse interne.");
+                        return;
+                    }
+                    Files.copy(in, configFile);
+                }
+        } catch (IOException e) {
+            this.logger.error("Impossibile creare il file di configurazione. Maggiori informazioni a seguire:");
+            this.logger.error(e.getMessage());
+        }
+    }
+
+    /**
+     * createEmptyConfigFile
+     * Metodo che crea un file di configurazione vuoto se non esiste
+     */
+    private void createEmptyGroupList() {
+        this.logger.info("Creazione file di configurazione per gli utenti...");
+        try {
+            if (!Files.exists(this.dataDirectory))
+                Files.createDirectories(this.dataDirectory);
+            
+            Path configFile = this.dataDirectory.resolve(GROUP_LIST);
+            if (!Files.exists(configFile))
+                try (java.io.InputStream in = AutoCommands.class.getClassLoader().getResourceAsStream(GROUP_LIST)) {
+                    if (in == null){
+                        this.logger.error("Impossibile trovare " + GROUP_LIST + " nelle risorse interne.");
                         return;
                     }
                     Files.copy(in, configFile);
@@ -212,9 +245,14 @@ public class AutoCommands {
     }
 
     private void preloadCommandManager() {
-        Path configFile = this.dataDirectory.resolve(CONFIG_FILE_NAME);
-        if (!Files.exists(configFile))
-            createEmptyConfigFile();
+        Path userList = this.dataDirectory.resolve(USER_LIST);
+        Path groupList = this.dataDirectory.resolve(GROUP_LIST);
+        if (!Files.exists(userList))
+            createEmptyUserList();
+
+        if(!Files.exists(groupList))
+            createEmptyGroupList();
+
         try {
             this.gestoreComandi.reload();
         } catch (MissingPluginConfigException e) {
