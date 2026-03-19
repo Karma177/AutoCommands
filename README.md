@@ -29,11 +29,11 @@ Onde evitare abusi, solo chi è munito del relativo set di permessi può attinge
 ## TODO
 Un breve registro con piani e lavori per le patch o integrazioni in cantiere in futuro.
 
-- [ ] Aggiunta del commando `/autocommands reload`.
-- [ ] Aggiunta del commando `/autocommands help`.
-- [ ] Aggiunta del commando `/autocommands version`.
+- [x] Aggiunta del commando `/autocommands reload`.
+- [x] Aggiunta del commando `/autocommands help`.
+- [x] Aggiunta del commando `/autocommands version`.
 - [ ] Macro?
-- [ ] Eliminare EventMethod, passare direttamente a chiavi "join", "command", "leave" (sono utilizzati solo nel codice, direi che sono ricordabili...)
+- [x] Eliminare EventMethod, passare direttamente a chiavi "join", "command", "leave" (sono utilizzati solo nel codice, direi che sono ricordabili...)
 - [ ] Pulizia generale 
     - Togliere trollnetwork dal package per renderlo on-par con adminchat (verrà aggiunto come autore dopo il trasferimento), rinominare AutoCommandListener a AutoCMDListner. 
     (Per il resto il codice è già stato riordinato al 70%)

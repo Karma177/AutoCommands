@@ -40,6 +40,7 @@ public class AutoCommands {
     private final Logger logger;
     private final GestoreComandi gestoreComandi;
     private final Path dataDirectory;
+    private final String version = "1.2-STABLE";
     private static final String CONFIG_FILE_NAME = "commands.json";
 
     /**
@@ -82,6 +83,10 @@ public class AutoCommands {
 
     @Subscribe
     public void onProxyReload(ProxyReloadEvent event) {
+        reload();
+    }
+
+    public void reload() {
         this.logger.info("Ricaricamento di AutoCommands in corso...");
         preloadCommandManager();
         Messages.init(this.dataDirectory.resolve("messages.yml").toString(), this.logger);
@@ -97,7 +102,12 @@ public class AutoCommands {
     public void onPostLogin(PostLoginEvent event) {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
-        pullAndExecute(uuid, "join");
+        try{
+            pullAndExecute(uuid, "join");
+        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
+                | InvalidCommandMethodException e) {
+            this.logger.error(e.getMessage());
+        }
     }
 
     /**
@@ -109,7 +119,12 @@ public class AutoCommands {
     public void onDisconnect(DisconnectEvent event) {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
-        pullAndExecute(uuid, "logout");
+        try {
+            pullAndExecute(uuid, "logout");
+        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
+                | InvalidCommandMethodException e) {
+            this.logger.error(e.getMessage());
+        }
     }
 
     /**
@@ -133,56 +148,24 @@ public class AutoCommands {
         // unload logic
         this.logger.info("Arresto completato!");
     }
-
-    /**
-     * onCommandCall
-     * Metodo chiamato quando viene eseguito il comando /AutoCommands in game, prende la lista dei comandi da eseguire in Command e li esegue
-     * @param args
-     * @param source
-     */
-    public void onCommandCall(String[] args, CommandSource source) {
-        String uuid = args[0];
-        // "command" è la Phase che l'enum mappa come "onCommand"
-        String[] comandiDaEseguire;
-        try {
-            comandiDaEseguire = gestoreComandi.getCommandList(uuid, "command");
-        } catch (InvalidCommandMethodException e) {
-            source.sendMessage(Messages.toComponent(Messages.get("cmd_exec_failed").replace("{uuid}", uuid)));
-            source.sendMessage(Messages.toComponent(Messages.get("check_console")));
-            this.logger.info(e.getMessage());
-            return;
-        } catch (MissingUserConfigException | EmptyCommandException e) {
-            source.sendMessage(Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", uuid)));
-            return;
-        } catch (MissingPluginConfigException e) {
-            source.sendMessage(Messages.toComponent(Messages.get("no_plugin_config")));
-            return;
-        }
-        source.sendMessage(Messages.toComponent(Messages.get("cmd_exec_success")
-                .replace("{uuid}", uuid)
-                .replace("{count}", String.valueOf(comandiDaEseguire.length))));
-
-        CommandManager commandManager = proxy.getCommandManager();
-        CommandSource console = proxy.getConsoleCommandSource();
-        commandExecuter(console, commandManager, comandiDaEseguire);
-    }
     
     public GestoreComandi getGestoreComandi() {
         return this.gestoreComandi;
     }
 
-    private void pullAndExecute(String uuid, String method) {
+    public Logger getLogger(){
+        return this.logger;
+    }
+
+    public int pullAndExecute(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
         String[] comandiDaEseguire;
-        try {
-            comandiDaEseguire = gestoreComandi.getCommandList(uuid, method);
-        } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException | InvalidCommandMethodException e) {
-            this.logger.info(e.getMessage());
-            return;
-        }
+        comandiDaEseguire = gestoreComandi.getCommandList(uuid, method);
 
         CommandManager commandManager = proxy.getCommandManager();
         CommandSource console = proxy.getConsoleCommandSource();
         commandExecuter(console, commandManager, comandiDaEseguire);
+
+        return comandiDaEseguire.length;
     }
 
     /**
@@ -232,7 +215,6 @@ public class AutoCommands {
         Path configFile = this.dataDirectory.resolve(CONFIG_FILE_NAME);
         if (!Files.exists(configFile))
             createEmptyConfigFile();
-        
         try {
             this.gestoreComandi.reload();
         } catch (MissingPluginConfigException e) {
@@ -249,5 +231,9 @@ public class AutoCommands {
             .build(),
             new AutoCommandListener(this)
         );
+    }
+
+    public String getVersion() {
+        return this.version;
     }
 }

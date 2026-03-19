@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ public class GestoreComandi {
     private final Gson gson;
     private String fileDirectory;
     private Map<String, Map<String, List<String>>> commandsCache;
+    private List<String> methods = Arrays.asList("join","run","leave");
 
     public GestoreComandi(String fileDirectory, String configFileName) {
         this.fileDirectory = fileDirectory;
@@ -64,12 +66,8 @@ public class GestoreComandi {
      * @throws InvalidCommandMethodException 
      */
     public String[] getCommandList(String UUID, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
-        EventMethod eventMethod;
-        try {
-            eventMethod = EventMethod.valueOf(method);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidCommandMethodException("Metodo di esecuzione del comando non valido: " + method);
-        }
+        if(!this.methods.contains("method"))
+            throw new InvalidCommandMethodException("Il metodo "+method+" non è un metodo per accedere alla lista comandi valido.");
 
         Map<String, Map<String, List<String>>> commands = this.getCommands();
         if (commands == null) {
@@ -81,9 +79,9 @@ public class GestoreComandi {
             throw new MissingUserConfigException("Nessuna configurazione trovata per l'utente " + UUID);
         }
 
-        List<String> eventCommands = userCommands.get(eventMethod.getJsonKey());
+        List<String> eventCommands = userCommands.get(method);
         if (eventCommands == null || eventCommands.isEmpty()) {
-            throw new EmptyCommandException("Nessun comando " + eventMethod.getJsonKey() + " per l'utente " + UUID);
+            throw new EmptyCommandException("Nessun comando " + method + " per l'utente " + UUID);
         }
         
         return eventCommands.toArray(new String[0]);

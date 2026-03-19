@@ -1,19 +1,19 @@
 {
   "UUID": {
-    "onJoin": [
+    "join": [
       "lp user {player} parent add autocommands"
     ],
-    "onCommand": [
+    "run": [
       "comando_personalizzato",
       "altro_comando"
     ],
-    "onLogout": [
+    "leave": [
       "lp user {player} parent remove autocommands"
     ]
   },
   "UUID2": {
-    "onJoin": [".."],
-    "onCommand": [".."],
-    "onLogout": [".."]
+    "join": [".."],
+    "run": [".."],
+    "leave": [".."]
   }
 }

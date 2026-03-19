@@ -61,6 +61,18 @@ public class Messages {
         loadMessages(file, logger);
     }
 
+    public static Map<String, Component> getHelp(){
+        Map<String, Component> map = new HashMap<>(); 
+        
+        map.put("usage_run",Messages.toComponent(Messages.get("usage_run")));
+        map.put("usage_reload",Messages.toComponent(Messages.get("usage_reload")));
+        map.put("usage_help",Messages.toComponent(Messages.get("usage_help")));
+        map.put("usage_version",Messages.toComponent(Messages.get("usage_version")));
+
+        return map;
+
+    }
+
     public static Component toComponent(String message) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(message);
     }
