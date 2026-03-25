@@ -1,28 +1,28 @@
 
 # help:
-usage_help: "&7[&b/adminchat (help)&7] - Mostra questo messaggio di aiuto."
-usage_version: "&7[&b/adminchat version&7] - Mostra la versione del plugin."
-usage_reload: "&7[&b/adminchat reload&7] - Ricarica la configurazione."
-usage_run: "&7[&b/adminchat run <uuid>&7] - Esegui i comandi specifici per l'utente."
+usage_help: "&7[Auto&bCMD&7] [&b/autocommands (help)&7] - Mostra questo messaggio di aiuto."
+usage_version: "&7[Auto&bCMD&7] &7[&b/autocommands version&7] - Mostra la versione del plugin."
+usage_reload: "&7[Auto&bCMD&7] &7[&b/autocommands reload&7] - Ricarica la configurazione."
+usage_run: "&7[Auto&bCMD&7] &7[&b/autocommands run &7(&bgroup/user/all&7) <uuid/group>&7] - Esegui i comandi specifici per un utente, gruppo o entrambi."
 
 
 
 # success:
-cmd_exec_success: "&aAutoCommands eseguiti per l'utente ({count}): {uuid}"
-reload_success: "&aReload avvenuto."
+cmd_exec_success: "&7[Auto&bCMD&7] &aAutoCommands eseguiti per l'utente ({count}): {uuid}"
+reload_success: "&7[Auto&bCMD&7] &aReload avvenuto."
 
 
 # errors:
 ## Console-ish
-no_plugin_config: "&4Nessun file di config per il plugin trovato!"
-cmd_exec_failed: "&cAutoCommands non è riuscito ad eseguire tutti i comandi per: {uuid}"
-check_console: "&cControlla la console per maggiori info."
+no_plugin_config: "&7[Auto&bCMD&7] &4Nessun file di config per il plugin trovato!"
+cmd_exec_failed: "&7[Auto&bCMD&7] &cAutoCommands non è riuscito ad eseguire tutti i comandi per: {uuid}"
+check_console: "&7[Auto&bCMD&7] &cControlla la console per maggiori info."
 
 ## User errors
-no_command_for_user: "&eNessun comando da eseguire per: {uuid}"
+no_command_for_user: "&7[Auto&bCMD&7] &eNessun comando da eseguire per: &c{uuid}"
 no_permission: "&cNon hai il permesso di eseguire questo comando."
-too_many_args: "&cTroppi argomenti! Uso corretto: /autocommands <uuid>"
-usage_error: '&7Uso errato. Digita "&b/autocommands help&7" per aiuto.'
+too_many_args: "&7[Auto&bCMD&7] Troppi argomenti! &Uso corretto: &b/autocommands <uuid>"
+usage_error: '&7[Auto&bCMD&7] Uso errato. Digita "&b/autocommands help&7" per aiuto.'
 
 
 ## missing:
