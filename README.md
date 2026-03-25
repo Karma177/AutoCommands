@@ -37,7 +37,7 @@ Un breve registro con piani e lavori per le patch o integrazioni in cantiere in 
 - [x] Eliminare EventMethod, passare direttamente a chiavi "join", "command", "leave" (sono utilizzati solo nel codice, direi che sono ricordabili...)
 - [x] Pulizia generale
     - [x] Messages sotto utils
-    - [x] PermissionCheck sotto Utils
+    - [x] PermissionCheck sotto utils
     - [x] Refactor e pulizia del codice
 - [x] Format messaggi in chat di default
 
