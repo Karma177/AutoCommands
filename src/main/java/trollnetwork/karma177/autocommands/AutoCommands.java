@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import trollnetwork.karma177.autocommands.utils.Messages;
 
@@ -108,7 +109,7 @@ public class AutoCommands {
         String uuid = player.getUniqueId().toString();
         try{
 
-            pullAndExecute(uuid, "join");
+            pullAndExecuteAllForUser(uuid, "login");
         } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
                 | InvalidCommandMethodException e) {
             this.logger.error(e.getMessage());
@@ -125,7 +126,7 @@ public class AutoCommands {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
         try {
-            pullAndExecute(uuid, "logout");
+            pullAndExecuteAllForUser(uuid, "logout");
         } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
                 | InvalidCommandMethodException e) {
             this.logger.error(e.getMessage());
@@ -162,16 +163,47 @@ public class AutoCommands {
         return this.logger;
     }
 
-    public int pullAndExecute(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+    public int[] pullAndExecuteAllForUser(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+        return pullAndExecuteMaster(uuid, method, "all");
+    }
+
+    public int[] pullExecuteUserExclusive(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+        return pullAndExecuteMaster(uuid, method, "user");
+    }
+
+    public int[] pullExecuteAllUsersInGroup(String group, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+        return pullAndExecuteMaster(group, method, "group");
+    }
+
+    private int[] pullAndExecuteMaster(String target, String method, String targetType) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
         List<String> comandiDaEseguire = new ArrayList<>();
-        comandiDaEseguire.addAll(Arrays.asList(gestoreComandi.getCommandList(uuid, method)));
-        comandiDaEseguire.addAll(Arrays.asList(gestoreComandi.getGroupCommandsFromUUID(uuid, method)));
+        switch(targetType){
+            case "user" -> comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getCommandList(target, method), target)));
+            case "group" -> {
+                String[] userUUIDs = gestoreComandi.getUsersFromGroup(target);
+                String[] groupCommands = gestoreComandi.getGroupCommands(target, method);
+                for(String uuid : userUUIDs)
+                    comandiDaEseguire.addAll(Arrays.asList(applyUUID(groupCommands, uuid)));
+            }
+            case "all" -> {
+                // Prendiamo tutti gli utenti e per ognuno prendiamo i comandi di gruppo e utente
+                comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getCommandList(target, method), target)));
+                comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getGroupCommandsFromUUID(target, method), target)));
+            }
+            default -> throw new InvalidCommandMethodException("Il target "+targetType+" non è un metodo per accedere alla lista comandi valido.");
+        }
 
         CommandManager commandManager = proxy.getCommandManager();
         CommandSource console = proxy.getConsoleCommandSource();
-        commandExecuter(console, commandManager, comandiDaEseguire.toArray(new String[0]));
+        int successCount = commandExecuter(console, commandManager, comandiDaEseguire.toArray(new String[0]));
 
-        return comandiDaEseguire.size();
+        return new int[]{comandiDaEseguire.size(), successCount};
+    }
+
+    private String[] applyUUID(String[] commands, String uuid){
+        return Arrays.stream(commands)
+                .map(cmd -> cmd.replace("{uuid}", uuid))
+                .toArray(String[]::new);
     }
     
 
@@ -183,15 +215,34 @@ public class AutoCommands {
      * @param commandManager
      * @param comandiDaEseguire
      */
-    private void commandExecuter(CommandSource console, CommandManager commandManager, String[] comandiDaEseguire) {
+    private int commandExecuter(CommandSource console, CommandManager commandManager, String[] comandiDaEseguire) {
         this.logger.info("CommandExecuter running...");
-        for (String comando : comandiDaEseguire)
-            commandManager.executeAsync(console, comando).thenAccept(successo -> {
-                if (!successo)
-                    logger.warn("Impossibile eseguire il comando: " + comando);
-                else
-                    logger.info("Comando eseguito: " + comando);
-            });
+        AtomicInteger totalCommands = new AtomicInteger(comandiDaEseguire.length);
+        AtomicInteger successCount = new AtomicInteger(0);
+        for (String command : comandiDaEseguire){
+            this.logger.info("Eseguendo:"+command);
+            totalCommands.decrementAndGet();
+            if(command == null || command.isBlank()){
+                this.logger.warn("Impossibile eseguire il comando: '" + command + "'");
+                this.logger.warn("Comando vuoto o null ignorato.");
+            }else{
+                try{
+                    commandManager.executeAsync(console, command).thenAccept(successo -> {
+                        if (!successo)
+                            logger.warn("Impossibile eseguire il comando: " + command);
+                        else{
+                            logger.info("Comando eseguito: " + command);
+                            successCount.incrementAndGet();
+                        }
+                    });
+                }catch(Exception e){
+                    logger.warn("Impossibile eseguire il comando: '" + command + "'. Errore: " + e.getMessage());
+                }
+            }
+        }
+        this.logger.info("Esecuzione comandi avviata: " + comandiDaEseguire.length + " comandi da eseguire.");
+        this.logger.info("Eseguiti prima di uscire: " + totalCommands.get());
+        return successCount.get();
     }
 
     /**

@@ -27,7 +27,7 @@ public class AutoCommandListener implements SimpleCommand {
 
     @Override
     public void execute(Invocation invocation) {
-        
+
         CommandSource source = invocation.source();
 
         if (!PermissionChecker.hasCommandPermission(invocation)) {
@@ -38,56 +38,89 @@ public class AutoCommandListener implements SimpleCommand {
         String[] args = invocation.arguments();
         // Controlliamo che l'UUID sia stato passato come argomento
 
-        switch(args.length){
-            case 0->{
+        switch (args.length) {
+            case 0 -> {
                 source.sendMessage(Messages.toComponent(Messages.get("usage_error")));
             }
-            case 1->{
-                switch(args[0]){
-                    case "run"->{
-                        int executed = -1;
-                        try {
-                            executed = this.plugin.pullAndExecute(args[1], "command");   
-                        } catch (InvalidCommandMethodException e) {
-                            source.sendMessage(Messages.toComponent(Messages.get("cmd_exec_failed").replace("{uuid}", args[1])));
-                            source.sendMessage(Messages.toComponent(Messages.get("check_console")));
-                            this.plugin.getLogger().info(e.getMessage());
-                            return;
-                        } catch (MissingUserConfigException | EmptyCommandException e) {
-                            source.sendMessage(Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", args[1])));
-                            return;
-                        } catch (MissingPluginConfigException e) {
-                            source.sendMessage(Messages.toComponent(Messages.get("no_plugin_config")));
-                            return;
-                        }
-
-                        if(executed!=-1)
-                            source.sendActionBar(Messages.toComponent(Messages.get("cmd_exec_success")
-                                    .replace("{uuid}", args[1])
-                                    .replace("{count}", String.valueOf(executed))));
-                        else
-                            source.sendActionBar(Messages.toComponent(Messages.get("cmd_exec_failed")
-                                    .replace("{uuid}", args[1])
-                                    .replace("{count}", String.valueOf(executed))));
-                    }
-                    case "version"->{
+            case 1 -> {
+                switch (args[0]) {
+                    case "version" -> {
                         source.sendMessage(Messages.toComponent(this.plugin.getVersion()));
                     }
-                    case "help"->{
-                        for(Entry<String, Component> line : Messages.getHelp().entrySet())
+                    case "help" -> {
+                        for (Entry<String, Component> line : Messages.getHelp().entrySet())
                             source.sendMessage(line.getValue());
                     }
-                    case "reload"->{
+                    case "reload" -> {
                         source.sendMessage(Messages.toComponent(Messages.get("reload_success")));
                         this.plugin.reload();
                     }
-                }   
+                    default -> {
+                        source.sendMessage(Messages.toComponent(Messages.get("usage_error")));
+                    }
+                }
             }
-            default->{
-                source.sendMessage(Messages.toComponent(Messages.get("too_many_args")));
+            case 3 -> {
+                if (args[0].equalsIgnoreCase("run")) {
+
+                    int[] executed = { -1, -1 };
+                    try {
+                        switch (args[1]) {
+                            case "user" -> {
+                                executed = this.plugin.pullExecuteUserExclusive(args[2], "run");
+                            }
+                            case "group" -> {
+                                executed = this.plugin.pullExecuteAllUsersInGroup(args[2], "run");
+                            }
+                            case "all" -> {
+                                executed = this.plugin.pullAndExecuteAllForUser(args[2], "run");
+                            }
+                            default -> {
+                                source.sendMessage(Messages.toComponent(Messages.get("usage_error")));
+                                return;
+                            }
+                        }
+                    } catch (InvalidCommandMethodException e) {
+                        source.sendActionBar(Messages.toComponent(Messages.get("cmd_exec_failed")
+                            .replace("{uuid}", args[2])
+                            .replace("{countSuccess}", String.valueOf(executed[1]))
+                            .replace("{countTotal}", String.valueOf(executed[0]))));
+                            
+                        source.sendMessage(Messages.toComponent(Messages.get("check_console")));
+                        this.plugin.getLogger().info(e.getMessage());
+                        return;
+                    } catch (MissingUserConfigException | EmptyCommandException e) {
+                        source.sendActionBar(
+                            Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", args[1])));
+                        return;
+                    } catch (MissingPluginConfigException e) {
+                        source.sendActionBar(Messages.toComponent(Messages.get("no_plugin_config")));
+                        return;
+                    } catch (IllegalArgumentException e) {
+                        source.sendMessage(Messages.toComponent(Messages.get("no_group_with_name").replace("{group}", args[2])));
+                        return;
+                    }
+
+                    if (executed[0] == executed[1])
+                        source.sendActionBar(Messages.toComponent(Messages.get("cmd_exec_success")
+                            .replace("{uuid}", args[1])
+                            .replace("{countSuccess}", String.valueOf(executed[1]))
+                            .replace("{countTotal}", String.valueOf(executed[0]))));
+                    else
+                        source.sendActionBar(Messages.toComponent(Messages.get("cmd_exec_failed")
+                            .replace("{uuid}", args[1])
+                            .replace("{countSuccess}", String.valueOf(executed[1]))
+                            .replace("{countTotal}", String.valueOf(executed[0]))));
+                }else {
+                    source.sendMessage(Messages.toComponent(Messages.get("usage_error")));
+                    return;
+                }
+            }
+            default -> {
+                source.sendMessage(Messages.toComponent(Messages.get("usage_error")));
             }
         }
-        
+
     }
 
     @Override
@@ -97,19 +130,51 @@ public class AutoCommandListener implements SimpleCommand {
         }
 
         String[] args = invocation.arguments();
-        
-        if (args.length <= 1) {
-            String partial = args.length == 0 ? "" : args[0].toLowerCase();
-            String[] availableUUIDs = this.plugin.getGestoreComandi().getAvailableUUIDs();
-            List<String> suggestions = new ArrayList<>();
-            for (String uuid : availableUUIDs)
-                if (uuid.toLowerCase().startsWith(partial))
-                    suggestions.add(uuid);
-            
-            return suggestions;
+        List<String> suggestions = new ArrayList<>();
+
+        switch (args.length) {
+            case 0:
+            case 1:
+                String partial0 = args.length == 0 ? "" : args[0].toLowerCase();
+                String[] rootCommands = { "run", "version", "help", "reload" };
+                for (String cmd : rootCommands) {
+                    if (cmd.startsWith(partial0)) {
+                        suggestions.add(cmd);
+                    }
+                }
+                break;
+
+            case 2:
+                if (args[0].equalsIgnoreCase("run")) {
+                    String partial1 = args[1].toLowerCase();
+                    String[] runSubCommands = { "user", "group", "all" };
+                    for (String cmd : runSubCommands) {
+                        if (cmd.startsWith(partial1)) {
+                            suggestions.add(cmd);
+                        }
+                    }
+                }
+                break;
+
+            case 3:
+                if (args[0].equalsIgnoreCase("run")) {
+                    String partial2 = args[2].toLowerCase();
+                    String[] availableTarget = new String[0];
+                    if (args[1].equalsIgnoreCase("user") || args[1].equalsIgnoreCase("all")) {
+                        availableTarget = this.plugin.getGestoreComandi().getAvailableUUIDs();
+                    } else if (args[1].equalsIgnoreCase("group")) {
+                        availableTarget = this.plugin.getGestoreComandi().getAvailableGroups();
+                    }
+                    for (String target : availableTarget) {
+                        if (target.toLowerCase().startsWith(partial2)) {
+                            suggestions.add(target);
+                        }
+                    }
+                }
+                break;
         }
-        
-        return Collections.emptyList();
+
+        return suggestions;
     }
-    
+
 }

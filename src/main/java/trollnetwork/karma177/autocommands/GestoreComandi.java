@@ -27,7 +27,7 @@ public class GestoreComandi {
     private String fileDirectory;
     private Map<String, Map<String, List<String>>> commandsCache;
     private Map<String, Map<String, List<String>>> groupsCache;
-    private List<String> methods = Arrays.asList("join","run","leave");
+    private List<String> methods = Arrays.asList("login","run","logout");
 
     public GestoreComandi(String fileDirectory, String userList, String groupList) {
         this.fileDirectory = fileDirectory;
@@ -45,10 +45,10 @@ public class GestoreComandi {
     }
 
     public Map<String, Map<String, List<String>>> getGroups() throws MissingPluginConfigException {
-        if (commandsCache == null) {
-            commandsCache = loadGroupsFromFile();
+        if (groupsCache == null) {
+            groupsCache = loadGroupsFromFile();
         }
-        return commandsCache;
+        return groupsCache;
     }
 
     /**
@@ -64,6 +64,18 @@ public class GestoreComandi {
         }
     }
 
+    /**
+     * getAvailableGroups()
+     * Legge la configurazione e restituisce una lista di tutti i gruppi presenti
+     * @return Array di gruppi disponibili
+     */
+    public String[] getAvailableGroups() {
+        try {
+            return getGroups().keySet().toArray(new String[0]);
+        } catch (MissingPluginConfigException e) {
+            return new String[0];
+        }
+    }
 
     /**
      * getCommandList()
@@ -77,7 +89,7 @@ public class GestoreComandi {
      * @throws InvalidCommandMethodException 
      */
     public String[] getCommandList(String UUID, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
-        if(!this.methods.contains("method"))
+        if(!this.methods.contains(method))
             throw new InvalidCommandMethodException("Il metodo "+method+" non è un metodo per accedere alla lista comandi valido.");
 
         Map<String, Map<String, List<String>>> commands = this.getCommands();
@@ -107,8 +119,30 @@ public class GestoreComandi {
         return commands.toArray(new String[0]);
     }
 
-    public String[] getGroupCommands(String group, String method){
-        return this.groupsCache.get(group).get(method).toArray(new String[0]);
+    public String[] getUsersFromGroup(String group) {
+        if (this.groupsCache == null || !this.groupsCache.containsKey(group)) {
+            return new String[0];
+        }
+        
+        Map<String, List<String>> groupData = this.groupsCache.get(group);
+        if (groupData == null || !groupData.containsKey("users") || groupData.get("users") == null) {
+            return new String[0];
+        }
+        
+        return groupData.get("users").toArray(new String[0]);
+    }
+
+    public String[] getGroupCommands(String group, String method) throws IllegalArgumentException{
+        if (this.groupsCache == null || !this.groupsCache.containsKey(group)) {
+            throw new IllegalArgumentException("Il gruppo '" + group + "' non esiste nella configurazione.");
+        }
+        
+        Map<String, List<String>> groupData = this.groupsCache.get(group);
+        if (groupData == null || !groupData.containsKey(method) || groupData.get(method) == null) {
+            throw new IllegalArgumentException("Nessun comando trovato per il gruppo '" + group + "' con metodo '" + method + "'.");
+        }
+        
+        return groupData.get(method).toArray(new String[0]);
     }
 
     public String[] checkMemberships(String UUID){

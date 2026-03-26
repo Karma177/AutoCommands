@@ -8,17 +8,18 @@ usage_run: "&7[&b/adminchat run <uuid>&7] - Esegui i comandi specifici per l'ute
 
 
 # success:
-cmd_exec_success: "&aAutoCommands eseguiti per l'utente ({count}): {uuid}"
+cmd_exec_success: "&aAutoCommands eseguiti per l'utente ({countSuccess}/{countTotal}): {uuid}"
 reload_success: "&aReload avvenuto."
 
 
 # errors:
 ## Console-ish
 no_plugin_config: "&4Nessun file di config per il plugin trovato!"
-cmd_exec_failed: "&cAutoCommands non è riuscito ad eseguire tutti i comandi per: {uuid}"
+cmd_exec_failed: "&cAutoCommands non è riuscito ad eseguire tutti i comandi per l'utente ({countSuccess}/{countTotal}): {uuid}"
 check_console: "&cControlla la console per maggiori info."
 
 ## User errors
+no_group_with_name: "&cNessun gruppo con il nome: {group}"
 no_command_for_user: "&eNessun comando da eseguire per: {uuid}"
 no_permission: "&cNon hai il permesso di eseguire questo comando."
 too_many_args: "&cTroppi argomenti! Uso corretto: /autocommands <uuid>"
