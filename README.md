@@ -32,12 +32,12 @@ Un breve registro con piani e lavori per le patch o integrazioni in cantiere in 
 - [x] Aggiunta del commando `/autocommands reload`.
 - [x] Aggiunta del commando `/autocommands help`.
 - [x] Aggiunta del commando `/autocommands version`.
-- [/] Macro?
-    - Complete al 90%, manca solo testing
+- [x] Macro?
 - [x] Eliminare EventMethod, passare direttamente a chiavi "join", "command", "leave" (sono utilizzati solo nel codice, direi che sono ricordabili...)
 - [x] Pulizia generale
     - [x] Messages sotto utils
     - [x] PermissionCheck sotto utils
     - [x] Refactor e pulizia del codice
 - [x] Format messaggi in chat di default
+- [] Migliorare l'error handling
 
