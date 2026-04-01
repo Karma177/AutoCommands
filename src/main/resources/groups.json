@@ -5,19 +5,19 @@
       "uuid2"
     ],
     "login": [
-      "lp user {uuid} parent add autocommands"
+      "lpv user {uuid} parent add autocommands"
     ],
     "run": [
-      "comando_personalizzato",
-      "altro_comando"
+      "comando_personalizzato_gruppo1",
+      "altro_comando_gruppo1"
     ],
-    "leave": [
-      "lp user {uuid} parent remove autocommands"
+    "logout": [
+      "lpv user {uuid} parent remove autocommands"
     ]
   },
   "group2": {
     "login": [".."],
     "run": [".."],
-    "leave": [".."]
+    "logout": [".."]
   }
 }

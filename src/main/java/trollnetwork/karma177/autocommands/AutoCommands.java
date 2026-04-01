@@ -18,6 +18,8 @@ import trollnetwork.karma177.autocommands.Exceptions.EmptyCommandException;
 import trollnetwork.karma177.autocommands.Exceptions.InvalidCommandMethodException;
 import trollnetwork.karma177.autocommands.Exceptions.MissingPluginConfigException;
 import trollnetwork.karma177.autocommands.Exceptions.MissingUserConfigException;
+import trollnetwork.karma177.autocommands.Exceptions.NoCommandsForGroupException;
+import trollnetwork.karma177.autocommands.Exceptions.NoCommandsForUserException;
 
 import org.slf4j.Logger;
 
@@ -34,7 +36,7 @@ import trollnetwork.karma177.autocommands.utils.Messages;
 @Plugin(
         id = "autocommands",
         name = "AutoCommands",
-        version = "1.2-STABLE",
+        version = "1.3-BETA",
         description = "Autoesecuzione di comandi predeterminati.",
         authors = {"Karma177"}
 )
@@ -47,6 +49,7 @@ public class AutoCommands {
     private final String version = "1.2-STABLE";
     private static final String USER_LIST = "users.json";
     private static final String GROUP_LIST = "groups.json";
+    public static boolean WELLFORMED_STATUS = true;
 
     /**
      * AutoCommands
@@ -108,10 +111,9 @@ public class AutoCommands {
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
         try{
-
             pullAndExecuteAllForUser(uuid, "login");
         } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
-                | InvalidCommandMethodException e) {
+                | InvalidCommandMethodException | NoCommandsForUserException | NoCommandsForGroupException e) {
             this.logger.error(e.getMessage());
         }
     }
@@ -128,7 +130,7 @@ public class AutoCommands {
         try {
             pullAndExecuteAllForUser(uuid, "logout");
         } catch (MissingPluginConfigException | EmptyCommandException | MissingUserConfigException
-                | InvalidCommandMethodException e) {
+                | InvalidCommandMethodException | NoCommandsForUserException | NoCommandsForGroupException e) {
             this.logger.error(e.getMessage());
         }
     }
@@ -163,19 +165,56 @@ public class AutoCommands {
         return this.logger;
     }
 
-    public int[] pullAndExecuteAllForUser(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+    // public boolean checkWellFormedStatus() {
+    //     try {
+    //         java.util.Map<String, java.util.Map<String, java.util.List<String>>> commands = this.gestoreComandi.getCommands();
+    //         if (commands != null) {
+    //             for (java.util.Map.Entry<String, java.util.Map<String, java.util.List<String>>> entry : commands.entrySet()) {
+    //                 java.util.Map<String, java.util.List<String>> data = entry.getValue();
+    //                 if (!data.containsKey("login") || !data.containsKey("run") || !data.containsKey("logout")) {
+    //                     this.logger.error("L'utente " + entry.getKey() + " nel file users non è ben formato (mancano le chiavi login, run o logout).");
+    //                     WELLFORMED_STATUS = false;
+    //                     return false;
+    //                 }
+    //             }
+    //         }
+
+    //         java.util.Map<String, java.util.Map<String, java.util.List<String>>> groups = this.gestoreComandi.getGroups();
+    //         if (groups != null) {
+    //             for (java.util.Map.Entry<String, java.util.Map<String, java.util.List<String>>> entry : groups.entrySet()) {
+    //                 java.util.Map<String, java.util.List<String>> data = entry.getValue();
+    //                 if (!data.containsKey("login") || !data.containsKey("run") || !data.containsKey("logout") || !data.containsKey("uuids")) {
+    //                     this.logger.error("Il gruppo " + entry.getKey() + " nel file groups non è ben formato (mancano le chiavi uuids, login, run o logout).");
+    //                     WELLFORMED_STATUS = false;
+    //                     return false;
+    //                 }
+    //             }
+    //         }
+    //         WELLFORMED_STATUS = true;
+    //         return true;
+    //     } catch (MissingPluginConfigException e) {
+    //         this.logger.error("Impossibile verificare la formattazione: " + e.getMessage());
+    //         WELLFORMED_STATUS = false;
+    //         return false;
+    //     }
+    // }
+
+    public int[] pullAndExecuteAllForUser(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException, NoCommandsForUserException, NoCommandsForGroupException {
+        //checkWellFormedStatus();
         return pullAndExecuteMaster(uuid, method, "all");
     }
 
-    public int[] pullExecuteUserExclusive(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+    public int[] pullExecuteUserExclusive(String uuid, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException, NoCommandsForUserException, NoCommandsForGroupException {
+        //checkWellFormedStatus();
         return pullAndExecuteMaster(uuid, method, "user");
     }
 
-    public int[] pullExecuteAllUsersInGroup(String group, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+    public int[] pullExecuteAllUsersInGroup(String group, String method) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException, NoCommandsForUserException, NoCommandsForGroupException {
+        //checkWellFormedStatus();
         return pullAndExecuteMaster(group, method, "group");
     }
 
-    private int[] pullAndExecuteMaster(String target, String method, String targetType) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException {
+    private int[] pullAndExecuteMaster(String target, String method, String targetType) throws MissingPluginConfigException, EmptyCommandException, MissingUserConfigException, InvalidCommandMethodException, NoCommandsForUserException, NoCommandsForGroupException {
         List<String> comandiDaEseguire = new ArrayList<>();
         switch(targetType){
             case "user" -> comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getCommandList(target, method), target)));
@@ -184,11 +223,22 @@ public class AutoCommands {
                 String[] groupCommands = gestoreComandi.getGroupCommands(target, method);
                 for(String uuid : userUUIDs)
                     comandiDaEseguire.addAll(Arrays.asList(applyUUID(groupCommands, uuid)));
+                if(comandiDaEseguire.isEmpty())
+                    throw new NoCommandsForGroupException("Non ci sono comandi da eseguire per il gruppo: " + target);
             }
             case "all" -> {
                 // Prendiamo tutti gli utenti e per ognuno prendiamo i comandi di gruppo e utente
-                comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getCommandList(target, method), target)));
+                try {
+                    comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getCommandList(target, method), target)));
+                } catch (MissingUserConfigException e) {
+                    // Se non ci sono comandi utente, logghiamo e proseguiamo comunque con i comandi di gruppo
+                    this.logger.warn("Nessun comando utente trovato per UUID: " + target);
+                }
+                
                 comandiDaEseguire.addAll(Arrays.asList(applyUUID(gestoreComandi.getGroupCommandsFromUUID(target, method), target)));
+
+                if(comandiDaEseguire.isEmpty())
+                    throw new NoCommandsForUserException("Non ci sono comandi da eseguire (né utente, né di un gruppo di cui fa parte) per l'utente con UUID: " + target);
             }
             default -> throw new InvalidCommandMethodException("Il target "+targetType+" non è un metodo per accedere alla lista comandi valido.");
         }
@@ -216,11 +266,11 @@ public class AutoCommands {
      * @param comandiDaEseguire
      */
     private int commandExecuter(CommandSource console, CommandManager commandManager, String[] comandiDaEseguire) {
-        this.logger.info("CommandExecuter running...");
+        this.logger.info("CommandExecuter running... ("+comandiDaEseguire.length+")");
         AtomicInteger totalCommands = new AtomicInteger(comandiDaEseguire.length);
         AtomicInteger successCount = new AtomicInteger(0);
         for (String command : comandiDaEseguire){
-            this.logger.info("Eseguendo:"+command);
+            //this.logger.info("Eseguendo: "+command);
             totalCommands.decrementAndGet();
             if(command == null || command.isBlank()){
                 this.logger.warn("Impossibile eseguire il comando: '" + command + "'");
@@ -240,8 +290,6 @@ public class AutoCommands {
                 }
             }
         }
-        this.logger.info("Esecuzione comandi avviata: " + comandiDaEseguire.length + " comandi da eseguire.");
-        this.logger.info("Eseguiti prima di uscire: " + totalCommands.get());
         return successCount.get();
     }
 

@@ -14,6 +14,8 @@ import trollnetwork.karma177.autocommands.Exceptions.EmptyCommandException;
 import trollnetwork.karma177.autocommands.Exceptions.InvalidCommandMethodException;
 import trollnetwork.karma177.autocommands.Exceptions.MissingPluginConfigException;
 import trollnetwork.karma177.autocommands.Exceptions.MissingUserConfigException;
+import trollnetwork.karma177.autocommands.Exceptions.NoCommandsForGroupException;
+import trollnetwork.karma177.autocommands.Exceptions.NoCommandsForUserException;
 import trollnetwork.karma177.autocommands.utils.Messages;
 import trollnetwork.karma177.autocommands.utils.PermissionChecker;
 
@@ -90,14 +92,20 @@ public class AutoCommandListener implements SimpleCommand {
                         this.plugin.getLogger().info(e.getMessage());
                         return;
                     } catch (MissingUserConfigException | EmptyCommandException e) {
-                        source.sendActionBar(
-                            Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", args[1])));
+                        source.sendMessage(
+                            Messages.toComponent(Messages.get("no_command_for_user").replace("{uuid}", args[2])));
                         return;
                     } catch (MissingPluginConfigException e) {
                         source.sendActionBar(Messages.toComponent(Messages.get("no_plugin_config")));
                         return;
                     } catch (IllegalArgumentException e) {
                         source.sendMessage(Messages.toComponent(Messages.get("no_group_with_name").replace("{group}", args[2])));
+                        return;
+                    } catch (NoCommandsForUserException e) {
+                        source.sendMessage(Messages.toComponent(Messages.get("no_commands_for_group_or_user").replace("{uuid}", args[2])));
+                        return;
+                    } catch (NoCommandsForGroupException e) {
+                        source.sendMessage(Messages.toComponent(Messages.get("no_commands_for_group").replace("{group}", args[2])));
                         return;
                     }
 

@@ -1,19 +1,19 @@
 {
   "UUID": {
-    "join": [
-      "lp user {uuid} parent add autocommands"
+    "login": [
+      "lpv user {uuid} parent add autocommands"
     ],
     "run": [
-      "comando_personalizzato",
-      "altro_comando"
+      "comando_personalizzato_utente",
+      "altro_comando_utente"
     ],
-    "leave": [
-      "lp user {uuid} parent remove autocommands"
+    "logout": [
+      "lpv user {uuid} parent remove autocommands"
     ]
   },
   "UUID2": {
     "join": [".."],
     "run": [".."],
-    "leave": [".."]
+    "logout": [".."]
   }
 }

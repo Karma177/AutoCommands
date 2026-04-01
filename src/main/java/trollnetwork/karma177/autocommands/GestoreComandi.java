@@ -125,11 +125,11 @@ public class GestoreComandi {
         }
         
         Map<String, List<String>> groupData = this.groupsCache.get(group);
-        if (groupData == null || !groupData.containsKey("users") || groupData.get("users") == null) {
+        if (groupData == null || !groupData.containsKey("uuids") || groupData.get("uuids") == null) {
             return new String[0];
         }
         
-        return groupData.get("users").toArray(new String[0]);
+        return groupData.get("uuids").toArray(new String[0]);
     }
 
     public String[] getGroupCommands(String group, String method) throws IllegalArgumentException{
@@ -145,13 +145,17 @@ public class GestoreComandi {
         return groupData.get(method).toArray(new String[0]);
     }
 
-    public String[] checkMemberships(String UUID){
-        List<String> groups = new ArrayList<>();;
+    public String[] checkMemberships(String UUID) {
+        List<String> groups = new ArrayList<>();
 
-        for(Map.Entry<String, Map<String, List<String>>> group : this.groupsCache.entrySet()){
-            if(group.getValue().containsKey(UUID))
-                groups.add(group.getKey());
-        };
+        if (this.groupsCache != null) {
+            for (Map.Entry<String, Map<String, List<String>>> group : this.groupsCache.entrySet()) {
+                List<String> uuids = group.getValue().get("uuids");
+                if (uuids != null && uuids.contains(UUID)) {
+                    groups.add(group.getKey());
+                }
+            }
+        }
 
         return groups.toArray(new String[0]);
     }
