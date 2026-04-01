@@ -46,7 +46,7 @@ public class AutoCommands {
     private final Logger logger;
     private final GestoreComandi gestoreComandi;
     private final Path dataDirectory;
-    private final String version = "1.2-STABLE";
+    private final String version = "1.3-BETA";
     private static final String USER_LIST = "users.json";
     private static final String GROUP_LIST = "groups.json";
     public static boolean WELLFORMED_STATUS = true;
